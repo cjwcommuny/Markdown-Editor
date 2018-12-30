@@ -1,9 +1,10 @@
 package client.view;
 
 import client.Controller;
-import com.sun.jndi.cosnaming.CNCtx;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -12,7 +13,7 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 
 public class MainFrame extends JFrame {
-    private JList outlineList;
+    private JList<String> outlineList;
     private JTextArea editorArea;
     private Controller controller;
 
@@ -20,11 +21,11 @@ public class MainFrame extends JFrame {
         this.controller = controller;
     }
 
-    private MainFrame(String title, Controller controller) throws HeadlessException {
+    private MainFrame(String title, Controller controller, ListModel<String> listModel) throws HeadlessException {
         super(title);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setJMenuBar(createMenuBar());
-        this.setContentPane(createSplitPane());
+        this.setContentPane(createSplitPane(listModel));
         this.setMinimumSize(new Dimension(1000, 500));
         this.controller = controller;
     }
@@ -73,13 +74,14 @@ public class MainFrame extends JFrame {
         JMenu menu = new JMenu("File");
         menu.add(createOpenMenuItem());
         menu.add(createSaveMenuItem());
+        menu.add(createExportMenuItem());
         return menu;
     }
 
     private JMenuItem createOpenMenuItem() {
         JMenuItem menuItem = new JMenuItem("Open");
         menuItem.addActionListener((ActionEvent e)-> {
-            JFileChooser fileChooser = createFileChooser();
+            JFileChooser fileChooser = createOpenFileChooser();
             int returnValueOfDialog = fileChooser.showOpenDialog(MainFrame.this);
             if (returnValueOfDialog == JFileChooser.APPROVE_OPTION) {
                 File file = fileChooser.getSelectedFile();
@@ -89,7 +91,7 @@ public class MainFrame extends JFrame {
         return menuItem;
     }
 
-    private JFileChooser createFileChooser() {
+    private JFileChooser createOpenFileChooser() {
         JFileChooser chooser = new JFileChooser();
         FileNameExtensionFilter filter =
                 new FileNameExtensionFilter("Markdown (*.md)", "md");
@@ -98,10 +100,14 @@ public class MainFrame extends JFrame {
         return chooser;
     }
 
+    private JFileChooser createSaveFileChooser() {
+        return new JFileChooser();
+    }
+
     private JMenuItem createSaveMenuItem() {
         JMenuItem menuItem = new JMenuItem("Save");
         menuItem.addActionListener((ActionEvent e)-> {
-            JFileChooser fileChooser = createFileChooser();
+            JFileChooser fileChooser = createSaveFileChooser();
             int returnValueOfDialog = fileChooser.showSaveDialog(MainFrame.this);
             if (returnValueOfDialog == JFileChooser.APPROVE_OPTION) {
                 File file = fileChooser.getSelectedFile();
@@ -114,35 +120,69 @@ public class MainFrame extends JFrame {
     private JMenuItem createExportMenuItem() {
         JMenuItem menuItem = new JMenuItem("Export");
         menuItem.addActionListener((ActionEvent e)-> {
-            //TODO
+            JFileChooser fileChooser = createSaveFileChooser();
+            int returnValueOfDialog = fileChooser.showSaveDialog(MainFrame.this);
+            if (returnValueOfDialog == JFileChooser.APPROVE_OPTION) {
+                File file = fileChooser.getSelectedFile();
+                controller.exportFile(file);
+            }
         });
         return menuItem;
     }
 
-    private JSplitPane createSplitPane() {
-        String[] imageNames = { "Bird", "Cat", "Dog", "Rabbit", "Pig", "dukeWaveRed",
-                "kathyCosmo", "lainesTongue", "left", "middle", "right", "stickerface"};
-        outlineList = new JList(imageNames);
-        JScrollPane outlinePane = new JScrollPane(outlineList);
+    private JSplitPane createSplitPane(ListModel<String> listModel) {
+        createEditorArea();
+        JScrollPane outlinePane = createOutlinePane(listModel);
+        JScrollPane editorPane = createEditorPane();
+        return createSplitPane(outlinePane, editorPane);
+    }
 
-        editorArea = new JTextArea(5,30);
-        editorArea.setEditable(true);
-        editorArea.setLineWrap(true);
-        //TODO: customization
-        JScrollPane editorPane = new JScrollPane(editorArea);
-        Dimension minimumSize = new Dimension(100, 50);
-        outlinePane.setMinimumSize(minimumSize);
-        editorPane.setMinimumSize(minimumSize);
-
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, outlinePane, editorPane);
+    private JSplitPane createSplitPane(JScrollPane leftPane, JScrollPane rightPane) {
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPane, rightPane);
         splitPane.setOneTouchExpandable(true);
         splitPane.setDividerLocation(150);
-
         return splitPane;
     }
 
-    public static MainFrame createAndShowGUI(Controller controller) {
-        MainFrame frame = new MainFrame("editor", controller);
+    private JScrollPane createEditorPane() {
+        JScrollPane editorPane = new JScrollPane(editorArea);
+        Dimension minimumSize = new Dimension(100, 50);
+        editorPane.setMinimumSize(minimumSize);
+        return editorPane;
+    }
+
+    private JScrollPane createOutlinePane(ListModel<String> listModel) {
+        outlineList = new JList<>(listModel);
+        JScrollPane outlinePane = new JScrollPane(outlineList);
+        Dimension minimumSize = new Dimension(100, 50);
+        outlinePane.setMinimumSize(minimumSize);
+        return outlinePane;
+    }
+
+    private void createEditorArea() {
+        editorArea = new JTextArea(5,30);
+        editorArea.setEditable(true);
+        editorArea.setLineWrap(true);
+        editorArea.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                //a char is inserted
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                //a char is removed
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                controller.handleTextChanges(getText());
+            }
+        });
+    }
+
+    public static MainFrame createAndShowGUI(Controller controller, ListModel<String> listModel) {
+        MainFrame frame = new MainFrame("editor", controller, listModel);
         frame.pack();
         frame.setVisible(true);
         return frame;
@@ -152,19 +192,15 @@ public class MainFrame extends JFrame {
         JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
     }
 
-    private class EditorAreaActionListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            String text = editorArea.getText();
-            controller.handleTextChanges(text);
-        }
-    }
-
-    public void changeText(String text) {
+    public void setText(String text) {
         editorArea.setText(text);
     }
 
     public String getText() {
         return editorArea.getText();
+    }
+
+    public JList<String> getOutlineList() {
+        return outlineList;
     }
 }

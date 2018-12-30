@@ -167,11 +167,13 @@ public class MainFrame extends JFrame {
             @Override
             public void insertUpdate(DocumentEvent e) {
                 //a char is inserted
+                controller.handleTextChanges(getText());
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
                 //a char is removed
+                controller.handleTextChanges(getText());
             }
 
             @Override

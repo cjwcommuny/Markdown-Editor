@@ -44,7 +44,7 @@ public class MarkdownParser {
             matchHeading(headingList, headingPatterns[i], text, i);
         }
         // ascending order
-        headingList.sort(Comparator.comparingInt((Heading h)-> -h.getIndex()));
+        headingList.sort(Comparator.comparingInt((Heading h)-> h.getIndex()));
         return headingList;
     }
 
@@ -52,7 +52,7 @@ public class MarkdownParser {
         Matcher matcher = pattern.matcher(text);
         while (matcher.find()) {
             int index = matcher.start();
-            String content = matcher.group();
+            String content = matcher.group(1);
             list.add(new Heading(content, index, rank));
         }
     }

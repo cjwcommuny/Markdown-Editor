@@ -45,19 +45,16 @@ public class Controller {
 
     private void generateOutline(String text) {
         List<MarkdownParser.Heading> list = MarkdownParser.getHeadingOfMarkdown(text);
-        JList<String> outlineList = frame.getOutlineList();
-        ArrayList<String> contentWithIndent = new ArrayList<>();
+        DefaultListModel<String> outlineListModel = model.getOutlineListModel();
+        outlineListModel.clear();
         for (MarkdownParser.Heading heading: list) {
             String content = heading.getText();
             int rank = heading.getRank();
             for (int i = 0; i < rank; ++i) {
                 content = " " + content;
             }
-            contentWithIndent.add(content);
+            outlineListModel.addElement(content);
         }
-        String[] contents = new String[contentWithIndent.size()];
-        contentWithIndent.toArray(contents);
-        outlineList.setListData(contents);
     }
 
     private void sendTextToServer(String text) {

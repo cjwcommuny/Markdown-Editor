@@ -1,6 +1,7 @@
 package client.view;
 
 import client.Controller;
+import client.exception.DialogNotShowException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -16,10 +17,6 @@ public class MainFrame extends JFrame {
     private JList<String> outlineList;
     private JTextArea editorArea;
     private Controller controller;
-
-    public void setController(Controller controller) {
-        this.controller = controller;
-    }
 
     private MainFrame(String title, Controller controller, ListModel<String> listModel) throws HeadlessException {
         super(title);
@@ -39,35 +36,76 @@ public class MainFrame extends JFrame {
 
     private JMenu createConnectionMenu() {
         JMenu menu = new JMenu("Connection");
-        menu.add(createConnectMenuItem());
+        menu.add(createJoinCooperationMenuItem());
+        menu.add(createEstablishCooperationMenuItem());
+        menu.add(createDisconnectCooperationMenuItem());
         return menu;
     }
 
-    private JMenuItem createConnectMenuItem() {
-        JMenuItem menuItem = new JMenuItem("Connect", KeyEvent.VK_C);
-        menuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JTextField ipField = new JTextField();
-                JTextField portField = new JTextField();
-                Object[] messages = {
-                        "Input ip: ", ipField,
-                        "Input port: ", portField,
-                };
-                int option = JOptionPane.showConfirmDialog(MainFrame.this,
-                        messages,
-                        "Enter server info",
-                        JOptionPane.OK_CANCEL_OPTION);
-                if (option == JOptionPane.OK_OPTION) {
-                    String ip = ipField.getText();
-                    String port = portField.getText();
-
-                    System.out.println(ip);
-                    System.out.println(port);
-                }
+    private JMenuItem createEstablishCooperationMenuItem() {
+        JMenuItem menuItem = new JMenuItem("Establish Cooperation");
+        menuItem.addActionListener((ActionEvent event) -> {
+            if (controller.isConnected()) {
+                return;
+            }
+            try {
+                String[] parameters = getConnectionParameter("Establish Cooperation");
+                controller.establishCooperation(parameters[0], parameters[1], parameters[2]);
+            } catch (DialogNotShowException e) {
+                createPopupDialog("Bad Dialog", e.getMessage());
             }
         });
         return menuItem;
+    }
+
+    private JMenuItem createJoinCooperationMenuItem() {
+        JMenuItem menuItem = new JMenuItem("Join Cooperation");
+        menuItem.addActionListener((ActionEvent event) -> {
+            if (controller.isConnected()) {
+                return;
+            }
+            try {
+                String[] parameters = getConnectionParameter("Join Cooperation");
+                controller.joinCooperation(parameters[0], parameters[1], parameters[2]);
+            } catch (DialogNotShowException e) {
+                createPopupDialog("Bad Dialog", e.getMessage());
+            }
+        });
+        return menuItem;
+    }
+
+    private JMenuItem createDisconnectCooperationMenuItem() {
+        JMenuItem menuItem = new JMenuItem("Disconnect");
+        menuItem.addActionListener((ActionEvent event) -> {
+            //TODO: not connected
+            if (!controller.isConnected()) {
+                return;
+            }
+            controller.disconnectToServer();
+        });
+        return menuItem;
+    }
+
+    private String[] getConnectionParameter(String windowTitle) throws DialogNotShowException {
+        JTextField ipField = new JTextField();
+        JTextField portField = new JTextField();
+        JTextField idField = new JTextField();
+        Object[] messages = {
+                "Ip: ", ipField,
+                "Port: ", portField,
+                "Id: ", idField,
+        };
+        int option = JOptionPane.showConfirmDialog(MainFrame.this,
+                messages,
+                windowTitle,
+                JOptionPane.OK_CANCEL_OPTION);
+        if (option == JOptionPane.OK_OPTION) {
+            String ip = ipField.getText();
+            String port = portField.getText();
+            String id = idField.getText();
+            return new String[]{ip, port, id};
+        }
+        throw new DialogNotShowException();
     }
 
     private JMenu createFileOperationMenu() {

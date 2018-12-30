@@ -20,7 +20,15 @@ public class Controller {
     private MainFrame frame;
     private Model model = new Model();
 
-    public void connectToServer(String ip, String port) {
+    public void establishCooperation(String ip, String port, String id) {
+
+    }
+
+    public void joinCooperation(String ip, String port, String id) {
+
+    }
+
+    private void connectToServer(String ip, String port) {
         try {
             connector.connectToServer(ip, port);
         } catch (Exception e) {
@@ -49,11 +57,13 @@ public class Controller {
         outlineListModel.clear();
         for (MarkdownParser.Heading heading: list) {
             String content = heading.getText();
+            StringBuilder stringBuilder = new StringBuilder();
             int rank = heading.getRank();
             for (int i = 0; i < rank; ++i) {
-                content = " " + content;
+                stringBuilder.append(" ");
             }
-            outlineListModel.addElement(content);
+            stringBuilder.append(content);
+            outlineListModel.addElement(stringBuilder.toString());
         }
     }
 
@@ -104,5 +114,9 @@ public class Controller {
         } catch (IOException e) {
             frame.createPopupDialog("Export File Error", "Cannot Export File");
         }
+    }
+
+    public boolean isConnected() {
+        return connector.isConnected();
     }
 }

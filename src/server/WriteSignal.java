@@ -1,22 +1,27 @@
 package server;
 
-import transmission.TextPacket;
+import transmission.Packet;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 class WriteSignal {
-    private TextPacket packet = new TextPacket();
+    private int idInSession;
+    private Packet packet;
     private boolean continueRun = true;
     private Lock lock = new ReentrantLock();
     private Condition condition = lock.newCondition();
 
-    synchronized TextPacket getPacket() {
+    public WriteSignal(int idInSession) {
+        this.idInSession = idInSession;
+    }
+
+    synchronized Packet getPacket() {
         return packet;
     }
 
-    synchronized void setPacket(TextPacket packet) {
+    synchronized void setPacket(Packet packet) {
         this.packet = packet;
     }
 
@@ -35,5 +40,13 @@ class WriteSignal {
 
     synchronized void await() throws InterruptedException {
         condition.await();
+    }
+
+    public void setIdInSession(int idInSession) {
+        this.idInSession = idInSession;
+    }
+
+    public int getIdInSession() {
+        return idInSession;
     }
 }

@@ -12,7 +12,8 @@ class SessionCollection {
     }
 
     synchronized Session newSession(int id, String text, WriteSignal writeSignal) {
-        Session session = map.put(id, new Session(text));
+        Session session = new Session(text);
+        map.put(id, session);
         session.addWriteSignal(writeSignal);
         return session;
     }

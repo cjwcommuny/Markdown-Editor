@@ -1,13 +1,11 @@
 package server;
 
-import transmission.TextPacket;
+import transmission.Packet;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 class Session {
-    private List<WriteSignal> writeSignals = Collections.synchronizedList(new LinkedList<>());
+    private Map<Integer, WriteSignal> writeSignalMap = Collections.synchronizedMap(new HashMap<>());
     private String text;
 
     Session(String text) {
@@ -15,7 +13,8 @@ class Session {
     }
 
     synchronized void addWriteSignal(WriteSignal signal) {
-        writeSignals.add(signal);
+
+        writeSignalMap.put(signal.getIdInSession(), signal);
     }
 
     synchronized void setText(String text) {
@@ -27,9 +26,17 @@ class Session {
     }
 
     synchronized void signalAllWrite() {
-        for (WriteSignal signal: writeSignals) {
-            signal.setPacket(new TextPacket(TextPacket.PacketType.TEXT, text));
+        for (Map.Entry<Integer, WriteSignal> entry: writeSignalMap.entrySet()) {
+            WriteSignal signal = entry.getValue();
+            signal.setPacket(new Packet(Packet.PacketType.TEXT, text));
             signal.signal();
+        }
+    }
+
+    synchronized void deleteClient(int key) {
+        writeSignalMap.remove(key);
+        if (writeSignalMap.size() == 0) {
+            //TODO
         }
     }
 }

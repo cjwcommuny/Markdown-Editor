@@ -2,17 +2,20 @@ package transmission;
 
 import java.io.Serializable;
 
-public class TextPacket implements Serializable {
+public class Packet implements Serializable {
     private PacketType packetType;
     private String text;
     private int id;
 
-    public TextPacket(PacketType packetType, String text) {
+    public Packet(PacketType packetType, String text) {
         this.packetType = packetType;
         this.text = text;
     }
 
-    public TextPacket() {
+    public Packet(PacketType packetType, String text, int id) {
+        this.packetType = packetType;
+        this.text = text;
+        this.id = id;
     }
 
     public void setPacketType(PacketType packetType) {
@@ -23,7 +26,7 @@ public class TextPacket implements Serializable {
         this.text = text;
     }
 
-    public TextPacket(String text) {
+    public Packet(String text) {
         this.text = text;
     }
 

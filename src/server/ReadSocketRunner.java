@@ -1,12 +1,13 @@
 package server;
 
-import transmission.TextPacket;
+import transmission.Packet;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
 
 class ReadSocketRunner implements Runnable {
+    private Socket socket;
     private ObjectInputStream inputStream;
     private SessionCollection sessionCollection;
     private Session session;
@@ -15,7 +16,7 @@ class ReadSocketRunner implements Runnable {
 
     public ReadSocketRunner(Socket socket, SessionCollection sessionCollection, WriteSignal signal) {
         try {
-//            this.socket = socket;
+            this.socket = socket;
             inputStream = new ObjectInputStream(socket.getInputStream());
             this.signal = signal;
             this.sessionCollection = sessionCollection;
@@ -28,22 +29,26 @@ class ReadSocketRunner implements Runnable {
     public void run() {
         try {
             while (continueRun) {
-                TextPacket textPacket = (TextPacket) inputStream.readObject();
-                handlePacket(textPacket);
+                Packet packet = (Packet) inputStream.readObject();
+                handlePacket(packet);
             }
         } catch (ClassNotFoundException | IOException e) {
-            //TODO
+            System.out.println("ERROR: Read Socket Runner: " + e.getMessage());
         }
     }
 
-    private void handlePacket(TextPacket packet) {
-        TextPacket.PacketType type = packet.getPacketType();
+    private void handlePacket(Packet packet) {
+        Packet.PacketType type = packet.getPacketType();
         switch (type) {
             case ESTABLISH:
-                establishSession(packet.getId(), packet.getText());
+                if (session == null) {
+                    establishSession(packet.getId(), packet.getText());
+                }
                 break;
             case JOIN:
-                joinSession(packet.getId(), packet.getText());
+                if (session == null) {
+                    joinSession(packet.getId());
+                }
                 break;
             case TEXT:
                 mergeText(packet.getText());
@@ -57,24 +62,25 @@ class ReadSocketRunner implements Runnable {
 
     private void establishSession(int id, String text) {
         if (sessionCollection.get(id) != null) {
-            TextPacket packet = new TextPacket(TextPacket.PacketType.REPLY, "Cooperation Already Exists");
-            signal.setPacket(packet);
-            signal.signal();
+            reply(Packet.PacketType.REPLY, "Connection Has Established");
         }
         this.session = sessionCollection.newSession(id, text, signal);
     }
 
-    private void joinSession(int id, String text) {
+    private void reply(Packet.PacketType type, String message) {
+        Packet packet = new Packet(type, message);
+        signal.setPacket(packet);
+        signal.signal();
+    }
+
+    private void joinSession(int id) {
         Session session = sessionCollection.get(id);
         if (session == null) {
-            TextPacket packet = new TextPacket(TextPacket.PacketType.REPLY, "Id Not Exists");
-            signal.setPacket(packet);
-            signal.signal();
+            reply(Packet.PacketType.REPLY, "Id Not Exists");
         }
         this.session = session;
         session.addWriteSignal(signal);
-        signal.setPacket(new TextPacket(TextPacket.PacketType.TEXT, session.getText()));
-        signal.signal();
+        reply(Packet.PacketType.TEXT, session.getText());
     }
 
     private void mergeText(String text) {
@@ -85,6 +91,7 @@ class ReadSocketRunner implements Runnable {
 
     private void closeConnection() {
         signal.stopRunning();
+        session.deleteClient(signal.getIdInSession());
         continueRun = false;
     }
 }

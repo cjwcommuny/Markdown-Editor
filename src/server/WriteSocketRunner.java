@@ -1,6 +1,6 @@
 package server;
 
-import transmission.TextPacket;
+import transmission.Packet;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -15,7 +15,7 @@ class WriteSocketRunner implements Runnable {
             outputStream = new ObjectOutputStream(socket.getOutputStream());
             this.signal = signal;
         } catch (IOException e) {
-            //TODO
+            System.out.println("ERROR: Write Socket new output stream: " + e.getMessage());
         }
     }
 
@@ -24,7 +24,7 @@ class WriteSocketRunner implements Runnable {
         try {
             while (signal.isContinueRun()) {
                 signal.await();
-                TextPacket packet = signal.getPacket();
+                Packet packet = signal.getPacket();
                 outputStream.writeObject(packet);
             }
         } catch (IOException | InterruptedException e) {

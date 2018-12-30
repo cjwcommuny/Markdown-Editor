@@ -8,8 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
-    private static final int PORT = 123456;
-    private int clientNumber = 0;
+    private static final int PORT = 12345;
     private SessionCollection sessionCollection = new SessionCollection();
     private ExecutorService threadPool = Executors.newCachedThreadPool();
 
@@ -18,7 +17,6 @@ public class Server {
             ServerSocket serverSocket = new ServerSocket(PORT);
             while (true) {
                 Socket socket = serverSocket.accept();
-                ++clientNumber;
                 createThread(socket);
             }
         } catch (IOException e) {
@@ -27,7 +25,7 @@ public class Server {
     }
 
     private void createThread(Socket socket) {
-        WriteSignal signal = new WriteSignal();
+        WriteSignal signal = new WriteSignal(socket.hashCode());
         threadPool.execute(new WriteSocketRunner(socket, signal));
         threadPool.execute(new ReadSocketRunner(socket, sessionCollection, signal));
     }

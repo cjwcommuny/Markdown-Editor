@@ -2,7 +2,7 @@ package client;
 
 import client.model.Model;
 import client.view.MainFrame;
-import transmission.TextPacket;
+import transmission.Packet;
 
 import javax.swing.*;
 import java.io.BufferedWriter;
@@ -11,8 +11,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 public class Controller {
@@ -21,16 +19,18 @@ public class Controller {
     private Model model = new Model();
 
     public void establishCooperation(String ip, String port, String id) {
-
+        try {
+            connector.connectToServer(ip, port);
+            connector.establishCooperation(id, frame.getText());
+        } catch (Exception e) {
+            frame.createPopupDialog("Error", e.getMessage());
+        }
     }
 
     public void joinCooperation(String ip, String port, String id) {
-
-    }
-
-    private void connectToServer(String ip, String port) {
         try {
             connector.connectToServer(ip, port);
+            connector.joinCooperation(id);
         } catch (Exception e) {
             frame.createPopupDialog("Error", e.getMessage());
         }
@@ -68,7 +68,7 @@ public class Controller {
     }
 
     private void sendTextToServer(String text) {
-        TextPacket packet = new TextPacket(text);
+        Packet packet = new Packet(Packet.PacketType.TEXT, text);
         try {
             connector.sendToServer(packet);
         } catch (IOException e) {

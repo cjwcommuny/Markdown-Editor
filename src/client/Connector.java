@@ -1,33 +1,68 @@
 package client;
 
 import client.exception.WrongConnectionParameterFormatException;
-import transmission.TextPacket;
+import transmission.Packet;
 
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class Connector {
+class Connector {
     private String ip;
     private int port;
     private Socket socket;
     private ObjectOutputStream toServerStream;
     private ObjectInputStream fromServerStream;
+    private ExecutorService threadPool = Executors.newCachedThreadPool();
 
-    public void connectToServer(String ip, String port)
+    void connectToServer(String ip, String port)
             throws WrongConnectionParameterFormatException, UnknownHostException, IOException {
-        checkParameter(ip, port);
+        this.port = checkParameter(ip, port);
         this.ip = ip;
-        this.port = Integer.parseInt(port);
         establishConnection();
     }
 
-    public void disconnectToServer() throws IOException {
+    void startReadSocket() {
+        threadPool.execute(() -> {
+            try {
+                while (fromServerStream != null) {
+                    Packet packet = (Packet) fromServerStream.readObject();
+                    //TODO: receive text
+                }
+            } catch (ClassNotFoundException | IOException e) {
+                //TODO
+                System.out.println("connector read failed");
+            }
+        });
+    }
+
+    void establishCooperation(String idStr, String text)
+            throws WrongConnectionParameterFormatException, IOException {
+        int id = parseId(idStr);
+        Packet packet = new Packet(Packet.PacketType.ESTABLISH, text, id);
+        toServerStream.writeObject(packet);
+    }
+
+    void joinCooperation(String idRaw) throws WrongConnectionParameterFormatException, IOException {
+        int id = parseId(idRaw);
+        Packet packet = new Packet(Packet.PacketType.JOIN, null, id);
+        toServerStream.writeObject(packet);
+    }
+
+    private int parseId(String id) throws WrongConnectionParameterFormatException {
+        return Integer.parseInt(id);
+    }
+
+    void disconnectToServer() throws IOException {
         closeConnection();
     }
 
-    private void checkParameter(String ip, String port) throws WrongConnectionParameterFormatException {
-        //TODO
+    private int checkParameter(String ip, String port) throws WrongConnectionParameterFormatException {
+        //TODO: check ip format
+        return Integer.parseInt(port);
     }
 
     private void establishConnection() throws UnknownHostException, IOException {
@@ -37,18 +72,19 @@ public class Connector {
     }
 
     private void closeConnection() throws IOException {
+        Packet packet = new Packet(Packet.PacketType.CLOSE, null);
+        toServerStream.writeObject(packet);
         socket.close();
         socket = null;
         toServerStream = null;
         fromServerStream = null;
     }
 
-    public boolean isConnected() {
-        //TODO
+    boolean isConnected() {
         return socket != null;
     }
 
-    public void sendToServer(TextPacket packet) throws IOException {
+    void sendToServer(Packet packet) throws IOException {
         if (isConnected()) {
             toServerStream.writeObject(packet);
         }

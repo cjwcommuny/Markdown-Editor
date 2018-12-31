@@ -15,7 +15,7 @@ public class TextMerger {
 
     public static String merge(String originalText, String text) {
         LinkedList<diff_match_patch.Patch> patch = dmp.patch_make(originalText, text);
-        Object[] returnValue = dmp.patch_apply(patch, text);
+        Object[] returnValue = dmp.patch_apply(patch, originalText);
         return (String) returnValue[0];
     }
 }

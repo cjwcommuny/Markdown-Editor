@@ -24,8 +24,11 @@ class Session {
         return text;
     }
 
-    synchronized void signalAllWrite() {
+    synchronized void signalAllWrite(int key) {
         for (Map.Entry<Integer, WriteSignal> entry: writeSignalMap.entrySet()) {
+            if (key == entry.getKey()) {
+                continue;
+            }
             WriteSignal signal = entry.getValue();
             signal.setPacket(new Packet(Packet.PacketType.TEXT, text));
             signal.signal();

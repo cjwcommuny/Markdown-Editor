@@ -90,7 +90,7 @@ class ReadSocketRunner implements Runnable {
         System.out.println("get text content: " + text + "$$$$$$$$$");
         String newText = TextMerger.merge(session.getText(), text);
         session.setText(newText);
-        session.signalAllWrite();
+        session.signalAllWrite(socket.hashCode());
     }
 
     private void closeConnection() {

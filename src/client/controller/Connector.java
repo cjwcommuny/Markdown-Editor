@@ -1,4 +1,4 @@
-package client;
+package client.controller;
 
 import client.exception.WrongConnectionParameterFormatException;
 import transmission.Packet;
@@ -37,7 +37,6 @@ class Connector {
                     controller.handlePacketReceived(packet);
                 }
             } catch (ClassNotFoundException | IOException e) {
-                //TODO
                 System.out.println("connector read failed");
             }
         });
@@ -73,7 +72,6 @@ class Connector {
         socket = new Socket(ip, port);
         toServerStream = new ObjectOutputStream(socket.getOutputStream());
         fromServerStream = new ObjectInputStream(socket.getInputStream());
-        System.out.println("local address: " + socket.getLocalAddress() + ", local port: " + socket.getLocalPort());
     }
 
     private void closeConnection() throws IOException {

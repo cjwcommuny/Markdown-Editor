@@ -63,9 +63,10 @@ class ReadSocketRunner implements Runnable {
     private void establishSession(int id, String text) {
         if (sessionCollection.get(id) != null) {
             reply(Packet.PacketType.CLOSE, "Id Has been used");
+            return;
         }
         this.session = sessionCollection.newSession(id, text, signal);
-        reply(Packet.PacketType.REPLY, "Establish Session");
+        reply(Packet.PacketType.REPLY, "Establish Successfully");
         System.out.println("session " + id + " established");
     }
 
@@ -79,16 +80,14 @@ class ReadSocketRunner implements Runnable {
         Session session = sessionCollection.get(id);
         if (session == null) {
             reply(Packet.PacketType.CLOSE, "Id Not Exists");
+            return;
         }
         this.session = session;
         session.addWriteSignal(signal);
-        reply(Packet.PacketType.REPLY, "Join Cooperation Successfully");
         reply(Packet.PacketType.TEXT, session.getText());
     }
 
     private void mergeText(String text) {
-//        System.out.println("get text from " + socket.getPort());
-//        System.out.println("get text content: " + text + "$$$$$$$$$");
         String newText = TextMerger.merge(session.getText(), text);
         session.setText(newText);
         session.signalAllWrite(socket.hashCode());

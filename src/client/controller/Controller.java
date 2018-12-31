@@ -1,11 +1,10 @@
-package client;
+package client.controller;
 
 import client.model.Model;
 import client.view.MainFrame;
 import transmission.Packet;
 
 import javax.swing.*;
-import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -22,8 +21,8 @@ public class Controller {
     public void establishCooperation(String ip, String port, String id) {
         try {
             connector.connectToServer(ip, port);
-            connector.establishCooperation(id, frame.getText());
             connector.startReadSocket();
+            connector.establishCooperation(id, frame.getText());
             frame.disconnectMenuItemSetEnabled(true);
             frame.establishJoinMenuItemSetEnabled(false);
         } catch (Exception e) {
@@ -34,8 +33,8 @@ public class Controller {
     public void joinCooperation(String ip, String port, String id) {
         try {
             connector.connectToServer(ip, port);
-            connector.joinCooperation(id);
             connector.startReadSocket();
+            connector.joinCooperation(id);
             frame.disconnectMenuItemSetEnabled(true);
             frame.establishJoinMenuItemSetEnabled(false);
         } catch (Exception e) {
@@ -54,7 +53,6 @@ public class Controller {
     }
 
     public void handleTextChanges(String text) {
-//        generateOutline(text);
         if (connector.isConnected()) {
             sendTextToServer(text);
         }
@@ -79,8 +77,6 @@ public class Controller {
     private void sendTextToServer(String text) {
         Packet packet = new Packet(Packet.PacketType.TEXT, text);
         try {
-            System.out.println("send to server: " + text);
-            System.out.println("$$$$$$$");
             connector.sendToServer(packet);
         } catch (IOException e) {
             frame.createPopupDialog("Send failed", e.getMessage(), JOptionPane.ERROR_MESSAGE);
@@ -142,7 +138,10 @@ public class Controller {
                 displayMessage(packet.getText());
                 break;
             case CLOSE:
+                frame.createPopupDialog("Invalid Parameter", packet.getText(), JOptionPane.ERROR_MESSAGE);
                 connector.disconnectToServer(); //TODO: handle IOException
+                frame.disconnectMenuItemSetEnabled(false);
+                frame.establishJoinMenuItemSetEnabled(true);
             default:
         }
     }

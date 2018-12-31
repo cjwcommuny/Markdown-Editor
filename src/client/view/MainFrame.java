@@ -1,6 +1,6 @@
 package client.view;
 
-import client.Controller;
+import client.controller.Controller;
 import client.exception.DialogNotShowException;
 
 import javax.swing.*;
@@ -9,10 +9,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.io.File;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,7 +63,6 @@ public class MainFrame extends JFrame {
                 String[] parameters = getConnectionParameter("Establish Cooperation");
                 controller.establishCooperation(parameters[0], parameters[1], parameters[2]);
             } catch (DialogNotShowException e) {
-//                createPopupDialog("Bad Dialog", e.getMessage());
                 //do nothing
             }
         });
@@ -83,7 +79,6 @@ public class MainFrame extends JFrame {
                 String[] parameters = getConnectionParameter("Join Cooperation");
                 controller.joinCooperation(parameters[0], parameters[1], parameters[2]);
             } catch (DialogNotShowException e) {
-//                createPopupDialog("Bad Dialog", e.getMessage());
                 //do nothing
             }
         });
@@ -195,6 +190,7 @@ public class MainFrame extends JFrame {
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPane, rightPane);
         splitPane.setOneTouchExpandable(true);
         splitPane.setDividerLocation(150);
+        splitPane.setBorder(BorderFactory.createEmptyBorder());
         return splitPane;
     }
 
@@ -202,6 +198,7 @@ public class MainFrame extends JFrame {
         JScrollPane editorPane = new JScrollPane(editorArea);
         Dimension minimumSize = new Dimension(100, 50);
         editorPane.setMinimumSize(minimumSize);
+        editorPane.setBorder(BorderFactory.createEmptyBorder());
         return editorPane;
     }
 
@@ -211,6 +208,7 @@ public class MainFrame extends JFrame {
         JScrollPane outlinePane = new JScrollPane(outlineList);
         Dimension minimumSize = new Dimension(100, 50);
         outlinePane.setMinimumSize(minimumSize);
+        outlinePane.setBorder(BorderFactory.createEmptyBorder());
         return outlinePane;
     }
 
@@ -223,7 +221,7 @@ public class MainFrame extends JFrame {
     }
 
     public static MainFrame createAndShowGUI(Controller controller, ListModel<String> listModel) {
-        MainFrame frame = new MainFrame("editor", controller, listModel);
+        MainFrame frame = new MainFrame("Markdown Editor", controller, listModel);
         frame.pack();
         frame.setVisible(true);
         return frame;
@@ -263,33 +261,19 @@ public class MainFrame extends JFrame {
     private DocumentListener documentListener = new DocumentListener() {
         @Override
         public void insertUpdate(DocumentEvent e) {
-            //a char is inserted
-            System.out.println("insert");
-            System.out.println(getText());
-            System.out.println("$$$$$$$$$$");
             controller.generateOutline(getText());
-//                controller.handleTextChanges(getText());
             textChanged.set(true);
         }
 
         @Override
         public void removeUpdate(DocumentEvent e) {
-            //a char is removed
-            System.out.println("remove");
-            System.out.println(getText());
-            System.out.println("$$$$$$$$$$");
             controller.generateOutline(getText());
-//                controller.handleTextChanges(getText());
             textChanged.set(true);
         }
 
         @Override
         public void changedUpdate(DocumentEvent e) {
-            System.out.println("change update");
-            System.out.println(getText());
-            System.out.println("$$$$$$$$$$");
             controller.generateOutline(getText());
-//                controller.handleTextChanges(getText());
             textChanged.set(true);
         }
     };

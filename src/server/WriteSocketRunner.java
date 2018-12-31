@@ -1,6 +1,5 @@
 package server;
 
-import sun.awt.image.GifImageDecoder;
 import transmission.Packet;
 
 import java.io.IOException;
@@ -28,8 +27,6 @@ class WriteSocketRunner implements Runnable {
             while (signal.isContinueRun()) {
                 signal.await();
                 Packet packet = signal.getPacket();
-//                System.out.println("write to: " + socket.getPort() + ", type: " +packet.getPacketType());
-//                System.out.println("content: " + packet.getText());
                 outputStream.writeObject(packet);
             }
         } catch (IOException | InterruptedException e) {

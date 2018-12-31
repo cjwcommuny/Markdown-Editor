@@ -1,4 +1,4 @@
-package client;
+package client.controller;
 
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;

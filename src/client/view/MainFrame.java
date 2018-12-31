@@ -21,16 +21,23 @@ public class MainFrame extends JFrame {
     private JList<String> outlineList;
     private JTextArea editorArea;
     private Controller controller;
+    private JMenuItem establishCooperationMenuItem;
+    private JMenuItem joinCooperationMenuItem;
+    private JMenuItem disconnectMenuItem;
     private static final int SLEEP_SEGMENT = 1000;
     private final AtomicBoolean textChanged = new AtomicBoolean(false);
     private ExecutorService threadPool = Executors.newCachedThreadPool();
+    public final static int OUTLINE_INDENT = 2;
+    private final static Font OUTLINE_FONT = new Font("Menlo", Font.BOLD, 14);
+    private final static Font TEXT_BODY_FONT = new Font("Menlo", Font.PLAIN, 14);
+    private final static Dimension WINDOW_DIMENSION = new Dimension(800, 500);
 
     private MainFrame(String title, Controller controller, ListModel<String> listModel) throws HeadlessException {
         super(title);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setJMenuBar(createMenuBar());
         this.setContentPane(createSplitPane(listModel));
-        this.setMinimumSize(new Dimension(1000, 500));
+        this.setMinimumSize(WINDOW_DIMENSION);
         this.controller = controller;
     }
 
@@ -50,8 +57,8 @@ public class MainFrame extends JFrame {
     }
 
     private JMenuItem createEstablishCooperationMenuItem() {
-        JMenuItem menuItem = new JMenuItem("Establish Cooperation");
-        menuItem.addActionListener((ActionEvent event) -> {
+        establishCooperationMenuItem = new JMenuItem("Establish Cooperation");
+        establishCooperationMenuItem.addActionListener((ActionEvent event) -> {
             if (controller.isConnected()) {
                 return;
             }
@@ -59,15 +66,16 @@ public class MainFrame extends JFrame {
                 String[] parameters = getConnectionParameter("Establish Cooperation");
                 controller.establishCooperation(parameters[0], parameters[1], parameters[2]);
             } catch (DialogNotShowException e) {
-                createPopupDialog("Bad Dialog", e.getMessage());
+//                createPopupDialog("Bad Dialog", e.getMessage());
+                //do nothing
             }
         });
-        return menuItem;
+        return establishCooperationMenuItem;
     }
 
     private JMenuItem createJoinCooperationMenuItem() {
-        JMenuItem menuItem = new JMenuItem("Join Cooperation");
-        menuItem.addActionListener((ActionEvent event) -> {
+        joinCooperationMenuItem = new JMenuItem("Join Cooperation");
+        joinCooperationMenuItem.addActionListener((ActionEvent event) -> {
             if (controller.isConnected()) {
                 return;
             }
@@ -75,22 +83,23 @@ public class MainFrame extends JFrame {
                 String[] parameters = getConnectionParameter("Join Cooperation");
                 controller.joinCooperation(parameters[0], parameters[1], parameters[2]);
             } catch (DialogNotShowException e) {
-                createPopupDialog("Bad Dialog", e.getMessage());
+//                createPopupDialog("Bad Dialog", e.getMessage());
+                //do nothing
             }
         });
-        return menuItem;
+        return joinCooperationMenuItem;
     }
 
     private JMenuItem createDisconnectCooperationMenuItem() {
-        JMenuItem menuItem = new JMenuItem("Disconnect");
-        menuItem.addActionListener((ActionEvent event) -> {
+        disconnectMenuItem = new JMenuItem("Disconnect");
+        disconnectMenuItem.addActionListener((ActionEvent event) -> {
             //TODO: not connected
             if (!controller.isConnected()) {
                 return;
             }
             controller.disconnectToServer();
         });
-        return menuItem;
+        return disconnectMenuItem;
     }
 
     private String[] getConnectionParameter(String windowTitle) throws DialogNotShowException {
@@ -198,6 +207,7 @@ public class MainFrame extends JFrame {
 
     private JScrollPane createOutlinePane(ListModel<String> listModel) {
         outlineList = new JList<>(listModel);
+        outlineList.setFont(OUTLINE_FONT);
         JScrollPane outlinePane = new JScrollPane(outlineList);
         Dimension minimumSize = new Dimension(100, 50);
         outlinePane.setMinimumSize(minimumSize);
@@ -208,6 +218,7 @@ public class MainFrame extends JFrame {
         editorArea = new JTextArea(5,30);
         editorArea.setEditable(true);
         editorArea.setLineWrap(true);
+        editorArea.setFont(TEXT_BODY_FONT);
         addDocumentListener();
     }
 
@@ -218,8 +229,8 @@ public class MainFrame extends JFrame {
         return frame;
     }
 
-    public void createPopupDialog(String title, String message) {
-        JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
+    public void createPopupDialog(String title, String message, int messageType) {
+        JOptionPane.showMessageDialog(this, message, title, messageType);
     }
 
     public void setText(String text) {
@@ -289,5 +300,14 @@ public class MainFrame extends JFrame {
 
     public void addDocumentListener() {
         editorArea.getDocument().addDocumentListener(documentListener);
+    }
+
+    public void establishJoinMenuItemSetEnabled(boolean bool) {
+        establishCooperationMenuItem.setEnabled(bool);
+        joinCooperationMenuItem.setEnabled(bool);
+    }
+
+    public void disconnectMenuItemSetEnabled(boolean bool) {
+        disconnectMenuItem.setEnabled(bool);
     }
 }

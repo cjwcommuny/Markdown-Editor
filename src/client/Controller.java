@@ -24,8 +24,10 @@ public class Controller {
             connector.connectToServer(ip, port);
             connector.establishCooperation(id, frame.getText());
             connector.startReadSocket();
+            frame.disconnectMenuItemSetEnabled(true);
+            frame.establishJoinMenuItemSetEnabled(false);
         } catch (Exception e) {
-            frame.createPopupDialog("Error", e.getMessage());
+            frame.createPopupDialog("Error", e.getMessage(), JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -34,16 +36,20 @@ public class Controller {
             connector.connectToServer(ip, port);
             connector.joinCooperation(id);
             connector.startReadSocket();
+            frame.disconnectMenuItemSetEnabled(true);
+            frame.establishJoinMenuItemSetEnabled(false);
         } catch (Exception e) {
-            frame.createPopupDialog("Error", e.getMessage());
+            frame.createPopupDialog("Error", e.getMessage(), JOptionPane.ERROR_MESSAGE);
         }
     }
 
     public void disconnectToServer() {
         try {
             connector.disconnectToServer();
+            frame.disconnectMenuItemSetEnabled(false);
+            frame.establishJoinMenuItemSetEnabled(true);
         } catch (Exception e) {
-            frame.createPopupDialog("Error", e.getMessage());
+            frame.createPopupDialog("Error", e.getMessage(), JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -62,7 +68,7 @@ public class Controller {
             String content = heading.getText();
             StringBuilder stringBuilder = new StringBuilder();
             int rank = heading.getRank();
-            for (int i = 0; i < rank; ++i) {
+            for (int i = 0; i < rank * MainFrame.OUTLINE_INDENT; ++i) {
                 stringBuilder.append(" ");
             }
             stringBuilder.append(content);
@@ -77,7 +83,7 @@ public class Controller {
             System.out.println("$$$$$$$");
             connector.sendToServer(packet);
         } catch (IOException e) {
-            frame.createPopupDialog("Send failed", e.getMessage());
+            frame.createPopupDialog("Send failed", e.getMessage(), JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -94,7 +100,7 @@ public class Controller {
             String text = new String(encoded, Charset.defaultCharset());
             frame.setText(text);
         } catch (IOException e) {
-            frame.createPopupDialog("Open File Error", "Cannot read file");
+            frame.createPopupDialog("Open File Error", "Cannot read file", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -102,7 +108,7 @@ public class Controller {
         try {
             saveTextToFile(file, frame.getText());
         } catch (IOException e) {
-            frame.createPopupDialog("Save File Error", "Cannot save file");
+            frame.createPopupDialog("Save File Error", "Cannot save file", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -118,7 +124,7 @@ public class Controller {
         try {
             saveTextToFile(file, html);
         } catch (IOException e) {
-            frame.createPopupDialog("Export File Error", "Cannot Export File");
+            frame.createPopupDialog("Export File Error", "Cannot Export File", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -126,7 +132,7 @@ public class Controller {
         return connector.isConnected();
     }
 
-    public void handlePacketReceived(Packet packet) {
+    public void handlePacketReceived(Packet packet) throws IOException {
         Packet.PacketType type = packet.getPacketType();
         switch (type) {
             case TEXT:
@@ -135,6 +141,8 @@ public class Controller {
             case REPLY:
                 displayMessage(packet.getText());
                 break;
+            case CLOSE:
+                connector.disconnectToServer(); //TODO: handle IOException
             default:
         }
     }
@@ -144,10 +152,11 @@ public class Controller {
         frame.removeDocumentListener();
         frame.setText(text);
         frame.addDocumentListener();
+        generateOutline(text);
         frame.setTextUnChange();
     }
 
     private void displayMessage(String message) {
-        frame.createPopupDialog("Message", message);
+        frame.createPopupDialog("Message", message, JOptionPane.PLAIN_MESSAGE);
     }
 }

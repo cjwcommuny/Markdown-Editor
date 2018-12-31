@@ -13,7 +13,6 @@ class Session {
     }
 
     synchronized void addWriteSignal(WriteSignal signal) {
-
         writeSignalMap.put(signal.getIdInSession(), signal);
     }
 

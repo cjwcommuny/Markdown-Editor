@@ -65,6 +65,7 @@ class ReadSocketRunner implements Runnable {
             reply(Packet.PacketType.REPLY, "Connection Has Established");
         }
         this.session = sessionCollection.newSession(id, text, signal);
+        System.out.println("session " + id + " established");
     }
 
     private void reply(Packet.PacketType type, String message) {
@@ -81,9 +82,12 @@ class ReadSocketRunner implements Runnable {
         this.session = session;
         session.addWriteSignal(signal);
         reply(Packet.PacketType.TEXT, session.getText());
+
     }
 
     private void mergeText(String text) {
+        System.out.println("get text from " + socket.getPort());
+        System.out.println("get text content: " + text + "$$$$$$$$$");
         String newText = TextMerger.merge(session.getText(), text);
         session.setText(newText);
         session.signalAllWrite();

@@ -2,51 +2,55 @@ package server;
 
 import transmission.Packet;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 class WriteSignal {
     private int idInSession;
-    private Packet packet;
-    private boolean continueRun = true;
+    private final AtomicReference<Packet> packet = new AtomicReference<>();
+    private final AtomicBoolean continueRun = new AtomicBoolean(true);
     private Lock lock = new ReentrantLock();
     private Condition condition = lock.newCondition();
 
-    public WriteSignal(int idInSession) {
+    WriteSignal(int idInSession) {
         this.idInSession = idInSession;
     }
 
     synchronized Packet getPacket() {
-        return packet;
+        return this.packet.get();
     }
 
-    synchronized void setPacket(Packet packet) {
-        this.packet = packet;
+    void setPacket(Packet packet) {
+        this.packet.set(packet);
     }
 
     synchronized void stopRunning() {
-        this.continueRun = false;
+        this.continueRun.set(false);
+        lock.lock();
         condition.signal();
+        lock.unlock();
     }
 
-    synchronized boolean isContinueRun() {
-        return continueRun;
+    boolean isContinueRun() {
+        return this.continueRun.get();
     }
 
-    synchronized void signal() {
+    void signal() {
+        lock.lock();
         condition.signal();
+        lock.unlock();
     }
 
-    synchronized void await() throws InterruptedException {
+    void await() throws InterruptedException {
+        lock.lock();
         condition.await();
+        lock.unlock();
     }
 
-    public void setIdInSession(int idInSession) {
-        this.idInSession = idInSession;
-    }
-
-    public int getIdInSession() {
+    int getIdInSession() {
         return idInSession;
     }
 }

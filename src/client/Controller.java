@@ -5,6 +5,7 @@ import client.view.MainFrame;
 import transmission.Packet;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -14,7 +15,7 @@ import java.nio.file.Files;
 import java.util.List;
 
 public class Controller {
-    private Connector connector = new Connector();
+    private Connector connector = new Connector(this);
     private MainFrame frame;
     private Model model = new Model();
 
@@ -22,6 +23,7 @@ public class Controller {
         try {
             connector.connectToServer(ip, port);
             connector.establishCooperation(id, frame.getText());
+            connector.startReadSocket();
         } catch (Exception e) {
             frame.createPopupDialog("Error", e.getMessage());
         }
@@ -31,6 +33,7 @@ public class Controller {
         try {
             connector.connectToServer(ip, port);
             connector.joinCooperation(id);
+            connector.startReadSocket();
         } catch (Exception e) {
             frame.createPopupDialog("Error", e.getMessage());
         }
@@ -45,13 +48,13 @@ public class Controller {
     }
 
     public void handleTextChanges(String text) {
-        generateOutline(text);
+//        generateOutline(text);
         if (connector.isConnected()) {
             sendTextToServer(text);
         }
     }
 
-    private void generateOutline(String text) {
+    public void generateOutline(String text) {
         List<MarkdownParser.Heading> list = MarkdownParser.getHeadingOfMarkdown(text);
         DefaultListModel<String> outlineListModel = model.getOutlineListModel();
         outlineListModel.clear();
@@ -70,6 +73,8 @@ public class Controller {
     private void sendTextToServer(String text) {
         Packet packet = new Packet(Packet.PacketType.TEXT, text);
         try {
+            System.out.println("send to server: " + text);
+            System.out.println("$$$$$$$");
             connector.sendToServer(packet);
         } catch (IOException e) {
             frame.createPopupDialog("Send failed", e.getMessage());
@@ -80,6 +85,7 @@ public class Controller {
         Controller clientController = new Controller();
         clientController.frame =
                 MainFrame.createAndShowGUI(clientController, clientController.model.getOutlineListModel());
+        clientController.frame.startTextUnChangeListening();
     }
 
     public void readFile(File file) {
@@ -118,5 +124,30 @@ public class Controller {
 
     public boolean isConnected() {
         return connector.isConnected();
+    }
+
+    public void handlePacketReceived(Packet packet) {
+        Packet.PacketType type = packet.getPacketType();
+        switch (type) {
+            case TEXT:
+                updateText(packet.getText());
+                break;
+            case REPLY:
+                displayMessage(packet.getText());
+                break;
+            default:
+        }
+    }
+
+    private void updateText(String text) {
+        //TODO: thread safety
+        frame.removeDocumentListener();
+        frame.setText(text);
+        frame.addDocumentListener();
+        frame.setTextUnChange();
+    }
+
+    private void displayMessage(String message) {
+        frame.createPopupDialog("Message", message);
     }
 }

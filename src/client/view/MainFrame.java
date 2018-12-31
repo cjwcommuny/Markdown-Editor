@@ -12,11 +12,18 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainFrame extends JFrame {
     private JList<String> outlineList;
     private JTextArea editorArea;
     private Controller controller;
+    private static final int SLEEP_SEGMENT = 1000;
+    private final AtomicBoolean textChanged = new AtomicBoolean(false);
+    private ExecutorService threadPool = Executors.newCachedThreadPool();
 
     private MainFrame(String title, Controller controller, ListModel<String> listModel) throws HeadlessException {
         super(title);
@@ -87,9 +94,9 @@ public class MainFrame extends JFrame {
     }
 
     private String[] getConnectionParameter(String windowTitle) throws DialogNotShowException {
-        JTextField ipField = new JTextField();
-        JTextField portField = new JTextField();
-        JTextField idField = new JTextField();
+        JTextField ipField = new JTextField("127.0.0.1");
+        JTextField portField = new JTextField("12345");
+        JTextField idField = new JTextField("1");
         Object[] messages = {
                 "Ip: ", ipField,
                 "Port: ", portField,
@@ -201,24 +208,7 @@ public class MainFrame extends JFrame {
         editorArea = new JTextArea(5,30);
         editorArea.setEditable(true);
         editorArea.setLineWrap(true);
-        editorArea.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                //a char is inserted
-                controller.handleTextChanges(getText());
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                //a char is removed
-                controller.handleTextChanges(getText());
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                controller.handleTextChanges(getText());
-            }
-        });
+        addDocumentListener();
     }
 
     public static MainFrame createAndShowGUI(Controller controller, ListModel<String> listModel) {
@@ -240,7 +230,64 @@ public class MainFrame extends JFrame {
         return editorArea.getText();
     }
 
-    public JList<String> getOutlineList() {
-        return outlineList;
+    public void startTextUnChangeListening() {
+        threadPool.execute(() -> {
+            try {
+                while (true) {
+                    Thread.sleep(SLEEP_SEGMENT);
+                    if (textChanged.compareAndSet(true, false)) {
+                        controller.handleTextChanges(getText());
+                    }
+                }
+            } catch (InterruptedException e) {
+                System.out.println("Text Unchanged Listening Thread Interrupted: " + e.getMessage());
+            }
+        });
+    }
+
+    public void setTextUnChange() {
+        textChanged.set(false);
+    }
+
+    private DocumentListener documentListener = new DocumentListener() {
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            //a char is inserted
+            System.out.println("insert");
+            System.out.println(getText());
+            System.out.println("$$$$$$$$$$");
+            controller.generateOutline(getText());
+//                controller.handleTextChanges(getText());
+            textChanged.set(true);
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            //a char is removed
+            System.out.println("remove");
+            System.out.println(getText());
+            System.out.println("$$$$$$$$$$");
+            controller.generateOutline(getText());
+//                controller.handleTextChanges(getText());
+            textChanged.set(true);
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            System.out.println("change update");
+            System.out.println(getText());
+            System.out.println("$$$$$$$$$$");
+            controller.generateOutline(getText());
+//                controller.handleTextChanges(getText());
+            textChanged.set(true);
+        }
+    };
+
+    public void removeDocumentListener() {
+        editorArea.getDocument().removeDocumentListener(documentListener);
+    }
+
+    public void addDocumentListener() {
+        editorArea.getDocument().addDocumentListener(documentListener);
     }
 }

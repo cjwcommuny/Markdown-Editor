@@ -6,7 +6,6 @@ import transmission.Packet;
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -16,7 +15,12 @@ class Connector {
     private Socket socket;
     private ObjectOutputStream toServerStream;
     private ObjectInputStream fromServerStream;
+    private Controller controller;
     private ExecutorService threadPool = Executors.newCachedThreadPool();
+
+    public Connector(Controller controller) {
+        this.controller = controller;
+    }
 
     void connectToServer(String ip, String port)
             throws WrongConnectionParameterFormatException, UnknownHostException, IOException {
@@ -30,7 +34,7 @@ class Connector {
             try {
                 while (fromServerStream != null) {
                     Packet packet = (Packet) fromServerStream.readObject();
-                    //TODO: receive text
+                    controller.handlePacketReceived(packet);
                 }
             } catch (ClassNotFoundException | IOException e) {
                 //TODO
@@ -69,6 +73,7 @@ class Connector {
         socket = new Socket(ip, port);
         toServerStream = new ObjectOutputStream(socket.getOutputStream());
         fromServerStream = new ObjectInputStream(socket.getInputStream());
+        System.out.println("local address: " + socket.getLocalAddress() + ", local port: " + socket.getLocalPort());
     }
 
     private void closeConnection() throws IOException {

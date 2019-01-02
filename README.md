@@ -6,7 +6,7 @@
 
 3160102178@zju.edu.cn
 
-## 效果图
+## 总体效果图
 
 ![general UI](images/general UI.png)
 
@@ -25,13 +25,9 @@ JDK 1.8
 
 ## 功能
 
-### 打开/保存 markdown 文件
+### 打开/保存 markdown 文件，导出为 html 文件
 
 ![open:save](images/open:save.png)
-
-
-
-### 导出为 html 文件
 
 
 
@@ -60,10 +56,6 @@ JDK 1.8
 `controller` 包内部分为 `Controller` 、`Connector` 、`MarkdownParser` 三部分。
 
 其中 `Controller` 控制总的流程，而 `Connector` 则负责与 `Server` 通过 `Socket` 进行信息交互，包括接收和发送信息。`Connector` 负责解析 `markdown` 格式为 `html` 格式，这个类负责把外部库的 API 进行封装，将内部代码与第三方库解耦合，方便后续扩展。
-
-
-
-#### Controller
 
 
 
@@ -199,7 +191,24 @@ ExecutorService threadPool = Executors.newCachedThreadPool();
 
 每个客户端都对应了 `read` 和 `write` 两个线程，分别用于读写数据。
 
-当读线程读到一个传递文本的数据包时，读线程通知 `Session` 使用 
+当读线程读到一个传递文本的数据包时，读线程通知 `Session` 使用 `TextMerger` 来将数据包中的文本与 `Session` 中的文本进行比较合并冲突，并更新 `Session` 中的文本，并通知 `Session` 中所有的 `Client` （除了自己所在的 `Client`）更新自己的文本。
+
+通知更新客户端的文本是通过向 `write` 线程发消息完成的，接收到消息后 `write` 线程将文本装包发送给客户端。当 `Client` 收到数据包时判断类型，如果是 `PacketType.TEXT` 类型，那么就更新文本；如果是 `PacketType.REPLY` 类型，就使用 `JOptionPane.showMessageDialog()` 来通过消息窗口显示消息。
+
+`Server` 端的消息通信通过共享 `WriteSignal` 类型的数据来完成，其中含有条件变量等用于同步、消息传递的数据结构。
+
+```java
+class WriteSignal {
+    private int idInSession;
+    private final AtomicReference<Packet> packet = new AtomicReference<>();
+    private final AtomicBoolean continueRun = new AtomicBoolean(true);
+    private Lock lock = new ReentrantLock();
+    private Condition condition = lock.newCondition();
+    ...
+}
+```
+
+
 
 ### Transmission Protocol
 
@@ -232,7 +241,4 @@ public static enum PacketType {
 
 将 `Packet` 实例序列化后即可通过 `Socket` 进行传输。
 
-
-
-## 遇到的问题与解决
 

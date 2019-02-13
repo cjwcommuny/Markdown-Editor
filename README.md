@@ -1,14 +1,10 @@
 # Markdown-Editor
 
-陈佳伟
 
-3160102178
-
-3160102178@zju.edu.cn
 
 ## 总体效果图
 
-![general UI](images/general UI.png)
+![general UI](images/generalUI.png)
 
 ## 开发环境
 
@@ -16,7 +12,14 @@ macOS 10.14.2
 
 JDK 1.8
 
+## 运行方法
 
+```shell
+java -jar MarkdownEditor.jar
+java -jar server.jar
+```
+
+`jar` 文件见浙大网盘https://pan.zju.edu.cn/share/042430c2139903215cf1ba2ee5，如不能打开请邮件联系作者。
 
 ## 第三方库
 
@@ -36,6 +39,12 @@ JDK 1.8
 ![connection](images/connection.png)
 
 
+
+`Id` 指明了要加入/创建的协作组。 
+
+
+
+![establish](images/establish.png)
 
 ### 侧边大纲视图
 
